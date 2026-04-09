@@ -2,7 +2,15 @@ using UnityEngine;
 
 public class MobileInputs : MonoBehaviour
 {
-    float lastDistance;
+    // Pinch Variables
+    float pinchLastDistance;
+
+    // Swipe Variables
+    Vector2 swipeStartPos;
+    float swipeMinDistance = 50f;
+    bool isSwiping = false;
+    bool rotating = false;
+    Quaternion targetRotation;
 
     [SerializeField]
     public GameObject cube;
@@ -12,23 +20,31 @@ public class MobileInputs : MonoBehaviour
     void Update()
     {
         SingleTap();
+        Pinch();
         Swipe();
     }
     void SingleTap()
     {
-        // Single Tap
         if (Input.touchCount == 1)
         {
             Touch t = Input.GetTouch(0); // first finger
 
             if (t.phase == TouchPhase.Began)
             {
-                Debug.Log("Single Tap Detected");
+                isSwiping = false;
+            }
 
+            if (t.phase == TouchPhase.Ended)
+            {
+                if (!isSwiping)
+                {
+                    Debug.Log("Single Tap Detected");
+                    material.color = Random.ColorHSV();
+                }
             }
         }
     }
-    void Swipe()
+    void Pinch()
     {
         if (Input.touchCount == 2)
         {
@@ -39,10 +55,10 @@ public class MobileInputs : MonoBehaviour
 
             if (t1.phase == TouchPhase.Began)
             {
-                lastDistance = currentDistance;
+                pinchLastDistance = currentDistance;
                 return;
             }
-            float difference = currentDistance - lastDistance;
+            float difference = currentDistance - pinchLastDistance;
 
             if (Mathf.Abs(difference) > 5f)
             {
@@ -64,8 +80,40 @@ public class MobileInputs : MonoBehaviour
 
                 cube.transform.localScale = scale;
             }
-            lastDistance = currentDistance;
+            pinchLastDistance = currentDistance;
         }
     }
+    void Swipe()
+    {
+        if (Input.touchCount == 1)
+        {
+            Touch t = Input.GetTouch(0);
 
+            if (t.phase == TouchPhase.Began)
+            {
+                swipeStartPos = t.position;
+                isSwiping = false;
+            }
+
+            if (t.phase == TouchPhase.Moved)
+            {
+                isSwiping = true;
+
+                Vector2 swipe = t.position - swipeStartPos;
+
+                float rotateSpeed = 0.1f;
+
+                cube.transform.Rotate(
+                    Vector3.right * swipe.y * rotateSpeed,
+                    Space.World
+                    );
+                cube.transform.Rotate(
+                    Vector3.up * -swipe.x * rotateSpeed,
+                    Space.World
+                    );
+
+                swipeStartPos = t.position;
+            }
+        }
+    }
 }
